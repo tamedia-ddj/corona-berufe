@@ -1,108 +1,166 @@
-# Corona Berufe
+# Berufsrisiko Corona
 
-### Untertitel
+### Analyse des Ansteckungsrisiko nach Geschlecht und Einkommen
 
-<!---
-optional folgendermassen Bild einfügen:
-![Trump Hate](dt.png)
-Source: [Gage Skidmore](https://www.flickr.com/photos/gageskidmore/32758233090)>)
---->
+![Teaser](input/teaser_berufe.png)
 
-Kurzbeschreibung
+Die Fragen, die in der Untersuchung versucht werden zu beantworten sind:
+
+- Zeigen Berufe, die in der Schweiz eine hohe Frauenquote haben, ein höheres Ansteckungsrisiko für Infektionskrankheiten?
+- Haben Gutverdiener ein tieferes Ansteckungsrisiko als Geringverdiener?
+
+Das Ansteckungsrisiko erbigt sich auf Basis von Daten über die Arbeitsbedingungen. Für jeden Beruf gibt es zwei Indikatoren: Das Risiko, bei der Arbeit mit Krankheiten in Kontakt zu kommen, und die körperliche Nähe zu anderen Menschen. Die Daten lassen sich auf Schweizer Berufsgruppen übertragen und durch Arbeitsmarktdaten des Bundesamts für Statistik ergänzen. Lineare Regressionen ergeben anschliessend Aufschluss darüber, ob Zusammenhänge bestehen und diese signifikant sind.
+
 
 #### 
-**Datenquelle(n)**: xxx
+**Datenquellen**: [National Center for O*NET Development](https://www.onetonline.org/), [Bundesamt für Statistik](https://www.bfs.admin.ch/bfs/de/home/statistiken/arbeit-erwerb/erhebungen/sake.html)
 
-**Artikel**: [Titel des Artikels (inkl. Link)](https://github.com/tamedia-ddj/brennpunkt_bauernhof_public/blob/master/1_Kuerzungen.ipynb)
+**Artikel**: [Frauen haben bei der Arbeit ein höheres Ansteckungsrisiko als Männer](https://www.tagesanzeiger.ch)
 
-## bei grösseren Projekten: Inhaltsverzeichnis
+**Inspiration**: [The Workers Who Face the Greatest Coronavirus Risk](https://www.nytimes.com/interactive/2020/03/15/business/economy/coronavirus-worker-risk.html)
 
-1. Datenvorbereitung
-2. Beschreibung der Datenanlyse: [Link zu Notebook](https://github.com/tamedia-ddj/brennpunkt_bauernhof_public/blob/master/1_Kuerzungen.ipynb)
+## Inhaltsverzeichnis
 
-
-
-## Einführung / Verortung
-Text
-
-
-
-## Beschreibung der Datenanlyse
-
-Einige Beispielelemente:
-
-**Text:**
-
-In der Tabelle `cutbacks` werden auf Ebene der Gemeinde die Anzahl der Betriebe ermittelt, bei denen in 3 oder mehr Jahren (von insgesamt 4 Jahren) Kürzungen veranlasst wurden. Während des Exportprozesses wird der Spalte `multiple_cutbacks` die Anzahl Betriebe hinterlegt, die diese Bedingungen erfüllen.
-
-**Liste**
-
-* item 1
-* item 2
-* item 3
-* ...
+1. Datenaufbereitung
+	- [corona_berufe.ipynb](https://github.com/tamedia-ddj/brennpunkt_bauernhof_public/blob/master/1_Kuerzungen.ipynb)
+2. Datenanlyse
+	- [analyse.R](https://github.com/tamedia-ddj/brennpunkt_bauernhof_public/blob/master/1_Kuerzungen.ipynb)
+3. Output Files
 
 
-**Abschnitt mit code:**
+
+
+
+## 1. Datenaufbereitung
+
+Als Basis der Untersuchung dienten zwei Datensätze zu «physischen Arbeitsbedingen» des [National Center for O*NET Development](https://www.onetonline.org/): `Exposed_to_Disease_or_Infections.csv` und `Physical_Proximity.csv`. Beide auf Umfragedaten basierten Indikatoren beschreiben die Berufe auf einer Skala 0 bis 100, wobei zB. bei `Physical_Proximity.csv` die Werte folgende Beudtung haben:
+
+- 0 = «I don't work near other people»
+- 100 = «Very close (near touching)»
+
+Die Indikatoren werden in die Tabellen `proximity` bzw. `exposure` importiert.
+
+Insgesamt sind in den Daten 968 nach Standard Occupational Classification (SOC) kodierten Berufe bewertet. Mithilfe der Tabelle `soc10_isco08` wurde diese Kodierungen in die in der Schweiz geläufige ISCO-Kodierung übersetzt.
+
+Die neusten vom BFS zur Verfügung gestellten Werte zu der Anzahl Beschäftigter und weiblicher Beschäftgter (woraus der Frauenanteil berechnet wird) pro Beruf werden in die Tabelle `gender` importiert. Die Berufe sind hier feingliedrig und bis auf 5 Stufen klassifiziert (nach CH-ISCO-19-Standard). Die Übersetzung von SOC zu ISCO berücksichtigt die Werte bis zu 4. Stufe (*Berufsgattung*). Diese Stufen sind (am Beispiel von Lehrkräften im Primarbereich):
+
+Code | Stufe
+--- | --- 
+`2` - Berufshauptgruppe | Intellektuelle und wissenschaftliche Berufe
+`23` - Berufsgruppe | Lehrkräfte
+`234` - Berufsuntergruppe| Lehrkräfte im Primar- und Vorschulbereich
+`2341` - Berufsgattung| Lehrkräfte im Primarbereich
+
+Die neu zusammengeführten Daten sind in der Tabelle `data`zu finden.
+
+Zur Bestimmung der *Ansteckungsrisikos* werden die *proximity*- und *exposure*-Werte zu einem neuen **Index** (in der Spalte `exp_prox`) zusammengeführt. Dabei bilden wir einen Durchschnitt der beiden Werte, so dass auch der Index `exp_prox` auf einer Skala zwischen 0 und 100 normiert bleibt.
+
+Nicht für alle Berufsgattung finden sich Entsprechungen in `exposure`- und `proximity`-Tabellen. Da jedoch Daten zu der Anzahl Beschäftgter pro Berufsgruppe vorliegen, kann man erkennen dass 3.5 Mio. Erwerbstätige direkt klassifiziert werden können. Um die Zahl noch weiter zu erhöhen, treffen wir folgende Annahme:
+	
+**Annahme**: Berufe innerhalb der selben Berufsgruppe, habe ähnliche *proximity*- und *exposure*-Werte
+
+Haben also andere Berufe in der selben Berufsgruppe einen *proximity*- und *exposure*-Wert zugewiesen, wird deren Durchschnitt für die nicht bewerteten Berufe übernommen. Somit erweitert sich die Aussagekraft auf Berufe von 4.08 Mio. Erwerbstätigen.
 
 ```
-for filename in os.listdir(directory):
-    if (("srt" in filename)):
-        with open(directory+filename, "rb") as file:
-            ### decode and parse data
-            data = file.read().decode("iso-8859-1")
-            subtitle_generator = srt.parse(data)
-            subtitle = list(subtitle_generator)
-            identified_subtitles = identify_subtitles(subtitle)
-            
-            ### handle 1. counter for host, 2. comments and 3. counter for rest
-            for line in identified_subtitles:
-                if line[0] == "Moderator":
-                    words_moderator += len(tokenizer.tokenize(line[1]))
-                elif line[0] == "<---> Kommentar <--->":
-                    comments.append([filename, line[1]])
-                else:
-                    words_rest += len(tokenizer.tokenize(line[1]))
+data['Orig_Source'] = 1
+data.loc[pd.isnull(data['Exp_Prox']),'Orig_Source'] = 0
+
+for index, job in data[data.Orig_Source == 0].iterrows():
+    proximity_value = data[(data.ISCO_kurz == job['ISCO_kurz']) & (data.Orig_Source == 1)].Proximity.mean()
+    exposure_value = data[(data.ISCO_kurz == job['ISCO_kurz']) & (data.Orig_Source == 1)].Exposure.mean()
+    exp_prox_value = data[(data.ISCO_kurz == job['ISCO_kurz']) & (data.Orig_Source == 1)].Exp_Prox.mean()
+    data.loc[index, "Proximity"] = proximity_value
+    data.loc[index, "Exposure"] = exposure_value
+    data.loc[index, "Exp_Prox"] = exp_prox_value
 ``` 
 
-**Tabelle:**
+
+
+Daten zu den Durschnittseinkommen importieren wir in die Tabelle `salary`. Diesen Daten liegen nur auf Berufsgruppen-Ebene (Stufe 2) vor. Daher werden die Variablen `exposure`, `proximity`, und `Frauenanteil` gewichtet nach Anzahl Beschäftigter in der Berufsgattung auf die Berufsgruppen umgerechnet und in der neuen Tabelle `data_small` zusammengefasst.
+
+``` 
+data_small = salary.copy()
+for index, job in data_small.iterrows():
+    exposure_value = 0
+    proximity_value = 0
+    women_value = 0
+    total_sum = data.loc[(data.ISCO_kurz == job["ISCO"]) & (data.Orig_Source == 1),"Total (in T)"].sum()
+    total_employed = data.loc[(data.ISCO_kurz == job["ISCO"]),"Total (in T)"].sum()
+    for i, row in data.loc[(data.ISCO_kurz == job["ISCO"]) & (data.Orig_Source == 1),:].iterrows():
+        exposure_value += row['Exposure'] * row['Total (in T)']
+        proximity_value += row['Proximity'] * row['Total (in T)']
+    for i, row in data.loc[(data.ISCO_kurz == job["ISCO"]),:].iterrows():
+        women_value += (row['Frauenanteil'] * row['Total (in T)']) if not pd.isnull(row['Frauenanteil'] * row['Total (in T)']) else 0
+    exposure_value = exposure_value / total_sum
+    proximity_value = proximity_value / total_sum
+    women_value = women_value / total_employed
+    data_small.loc[index, 'Exposure'] = exposure_value
+    data_small.loc[index, 'Proximity'] = proximity_value
+    data_small.loc[index, 'n (in Tausend)'] = total_employed
+    data_small.loc[index, 'Frauenanteil'] = women_value
+data_small['Exp_Prox'] = (data_small['Exposure'] + data_small['Proximity']) / 2
+``` 
+
+Die beiden Tabelle `data` und `data_small` werden zur weiteren Analyse in *R* exportiert. 
+
+
+
+## 2. Datenanalyse 
+
+
+In *R* importieren wir die beiden Datensätze in in die Dataframes `data_large` (für die feingliedrigen Daten auf Berufsgattungsebene) und `data_small` (für die gröberen Daten auf Berufsgruppenebene die Daten zum Durchschnittseinkommen beinhalten).
+
+In diversen (nach Anzahl Erbstätigen gewichten) Regressionen werden Korrelationen zwischen Variablen untersucht. So erkennen wir als Nebenprodukt auch, dass der Ausländeranteil im Beruf und das Ansteckungsrisiko nicht korrelieren. Auf die Ursprungfragen fokussiert sehen wir:
+
+![Frauenanteil](internal/Frauenanteil.png)
+
+- Je höher der Frauenanteil im Beruf, desto grösser ist die Ansteckungsgefahr (`exp_prox`). Der Zusammenhang ist wie erwartet positiv und statistisch signifikant.
+
+![Einkommen](internal/Einkommen.png)
+
+- Der Zusammenhang zwischen Einkommen und Ansteckungsgefahr ist wie erwartet negativ - jedoch sehr schwach und nicht signifikant. Die Verteilung und der erkannte Zusammenhang könnten also auch rein zufällig entstanden sein (siehe grauen Fehlerbereich).
+
+
+
+## 3. Output Files
+
+Für weitere Visualisierung exportieren wir 2 Dateien:
+
+### output/jobs_detailed.csv
+
+Beschreibung der Datei die aus dem Dataframe `data` erstellt wurde.
 
 Variable | Beschreibunng
 --- | --- 
-`KUERZUNGEN` | Anzahl Kürzungen auf Gemeindeebene
-`BETRIEBE_TOTAL` | Anzahl Betriebe auf Gemeindeebene
-`KUERZUNGEN_ANTEIL` | Prozentualer Anteil der Betriebe die Kürzungen erhalten haben
-`KUERZUNGEN_BETRAG_AVG` | Durchschnittliche Höhe der Kürzungen pro Gemeinde
+`Berufsgattung ` | ISCO Code der Berufsgattung
+`Bezeichnung ` | Berufsbeschreibung
+`Total (in T) ` | Anzahl Erwerbstätige innerhalb der Berufsgattung in Tausend
+`Frauenanteil ` | Frauenanteil für Berufsgattung in %
+`Auslaenderanteil ` | Ausländeranteil für Berufsgattung in %
+`Exposure ` | Risiko, bei der Arbeit mit Krankheiten in Kontakt (zw. 0 und 100)
+`Proximity ` | Körperliche Nähe zu anderen Menschen (zw. 0 und 100)
+`Exp_Prox ` | Mittelwert aus `Exposure` und `Proximity` – Ansteckungsrisiko
+`ISCO_kurz ` | ISCO Code der Berufsgruppe
+`Orig_Source ` | Kennzeichnung ob Werte zu `Exposure` und `Proximity` aus Originaldatensatz stammen (1) oder selber berechnet wurden (0)
 
 
+### output/jobs_groups.csv
 
-
-
-## Output Files
-
-### output/Datei1.csv
-
-Beschreibung der Datei die aus dem Dataframe `df1` erstellt wurde.
-
-Variable | Beschreibunng
---- | --- 
-`id ` | eindeutiger Identifikator
-`Variable1 ` | Beschreibung der ersten Variable
-`etc ` | und so weiter...
-
-
-### output/Datei2.csv
-
-Beschreibung der Datei die aus dem Dataframe `df2` erstellt wurde.
+Beschreibung der Datei die aus dem Dataframe `data_small` erstellt wurde.
 
 Variable | Beschreibunng
 --- | --- 
-`id ` | eindeutiger Identifikator
-`Variable1 ` | Beschreibung der ersten Variable
-`etc ` | und so weiter...
+`ISCO ` | ISCO Code der Berufsgruppe
+`Beruf ` | Berufsgruppenbeschreibung
+`Alle-Total ` | Durschnittseinkommen der Berufsgruppe
+`Exposure ` | Risiko, bei der Arbeit mit Krankheiten in Kontakt (zw. 0 und 100)
+`Proximity ` | Körperliche Nähe zu anderen Menschen (zw. 0 und 100)
+`Exp_Prox ` | Mittelwert aus `Exposure` und `Proximity` – Ansteckungsrisiko
+`Frauenanteil ` | rauenanteil für Berufsgruppe in %
+`n (in Tausend) ` | Anzahl Erwerbstätige innerhalb der Berufsgruppe in Tausend
 
 
 ## Lizenz
 
-*Corona Berufe* is free and open source software released under the permissive MIT License.
+*Berufsrisiko Corona* is free and open source software released under the permissive MIT License.
 
