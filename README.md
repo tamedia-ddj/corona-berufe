@@ -22,9 +22,9 @@ Das Ansteckungsrisiko erbigt sich auf Basis von Daten über die Arbeitsbedingung
 ## Inhaltsverzeichnis
 
 1. Datenaufbereitung
-	- [corona_berufe.ipynb](https://github.com/tamedia-ddj/brennpunkt_bauernhof_public/blob/master/1_Kuerzungen.ipynb)
+	- [corona_berufe.ipynb](https://github.com/tamedia-ddj/corona-berufe/blob/master/corona_berufe.ipynb)
 2. Datenanlyse
-	- [analyse.R](https://github.com/tamedia-ddj/brennpunkt_bauernhof_public/blob/master/1_Kuerzungen.ipynb)
+	- [analyse.R](https://github.com/tamedia-ddj/corona-berufe/blob/master/analyse.R)
 3. Output Files
 
 
@@ -110,11 +110,11 @@ Die beiden Tabelle `data` und `data_small` werden zur weiteren Analyse in *R* ex
 
 In *R* importieren wir die beiden Datensätze in in die Dataframes `data_large` (für die feingliedrigen Daten auf Berufsgattungsebene) und `data_small` (für die gröberen Daten auf Berufsgruppenebene die Daten zum Durchschnittseinkommen beinhalten).
 
-In diversen (nach Anzahl Erbstätigen gewichten) Regressionen werden Korrelationen zwischen Variablen untersucht. So erkennen wir als Nebenprodukt auch, dass der Ausländeranteil im Beruf und das Ansteckungsrisiko nicht korrelieren. Auf die Ursprungfragen fokussiert sehen wir:
+In diversen (nach Anzahl Erwerbstätigen gewichteten) Regressionen werden Korrelationen zwischen Variablen untersucht. So erkennen wir als Nebenprodukt auch, dass der Ausländeranteil im Beruf und das Ansteckungsrisiko nicht korrelieren. Auf die Ursprungfragen fokussiert sehen wir:
 
 ![Frauenanteil](internal/Frauenanteil.png)
 
-- Je höher der Frauenanteil im Beruf, desto grösser ist die Ansteckungsgefahr (`exp_prox`). Der Zusammenhang ist wie erwartet positiv und statistisch signifikant.
+- Je höher der Frauenanteil im Beruf, desto grösser ist die Ansteckungsgefahr (`exp_prox`). Der Zusammenhang ist wie erwartet positiv.
 
 ![Einkommen](internal/Einkommen.png)
 
@@ -156,7 +156,7 @@ Variable | Beschreibunng
 `Exposure ` | Risiko, bei der Arbeit mit Krankheiten in Kontakt (zw. 0 und 100)
 `Proximity ` | Körperliche Nähe zu anderen Menschen (zw. 0 und 100)
 `Exp_Prox ` | Mittelwert aus `Exposure` und `Proximity` – Ansteckungsrisiko
-`Frauenanteil ` | rauenanteil für Berufsgruppe in %
+`Frauenanteil ` | Frauenanteil für Berufsgruppe in %
 `n (in Tausend) ` | Anzahl Erwerbstätige innerhalb der Berufsgruppe in Tausend
 
 
